@@ -23,7 +23,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Text.txt">
+    <Text Include="Coordinates.txt">
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>

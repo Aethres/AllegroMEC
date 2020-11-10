@@ -3,6 +3,7 @@
 #include <allegro5/allegro5.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_primitives.h>
+#include <ctype.h>
 #pragma warning(disable : 4996)
 
 typedef struct
@@ -16,22 +17,42 @@ typedef struct {
     double radius;
 }circle;
 
+coordinates points[100];
+
 void getPoints() {
 
     FILE* file;
-    file = fopen("Text.txt","r");
+    char string[100];
     
-    int asd[3][3];
+    int i = 0;
+    int chooser = 0;
 
-    for (int i = 0; i < 3; i++){
-        for (int j = 0; j < 3; j++){
+    if ((file = fopen("Coordinates.txt", "r")) == NULL) {
+        printf("\nCant open file\n");
+        return;
+    }
 
-            asd[i][j] = fscanf(file, "%d,", &asd[i][j]);
-            
+    fgets(&string, sizeof(string), file);
+  
+    char* ptr = &string;
+    while (*ptr) {
+        if (isdigit(*ptr) || *ptr == '-') {
+            int val = strtol(ptr, &ptr, 10);
+            if (chooser == 0) {
+                points[i].x = val;
+                chooser = 1;
+            }
+            else {
+                points[i].y = val;
+                chooser = 0;
+            }
+            i++;
+        }
+        else {
+            ptr++;
         }
     }
-    printf("1 : %d\n", asd[0][0]);
-    
+
     fclose(file);
 }
 
@@ -55,8 +76,6 @@ int is_valid_circle(circle circle, coordinates points[], int length) {
 
 
 circle getMEC() {
-
-    coordinates points[] = { { 0, 0 }, { 0, 1 }, { 1, 0 } };
 
     int pointsLength = sizeof(points) / sizeof(points[0]);
     int firstCircle = 1;
@@ -98,7 +117,7 @@ circle getMEC() {
 
         }
     }
-
+    printf("%f %f %f", mec.coordinates.x, mec.coordinates.y, mec.radius);
     return mec;
 
 }
@@ -114,7 +133,7 @@ int main()
 {
 
     getPoints();
-    return 0;
+    getMEC();
 
     must_init(al_init(), "allegro");
     must_init(al_install_keyboard(), "keyboard");
@@ -130,7 +149,7 @@ int main()
     al_set_new_display_option(ALLEGRO_SAMPLES, 8, ALLEGRO_SUGGEST);
     al_set_new_bitmap_flags(ALLEGRO_MIN_LINEAR | ALLEGRO_MAG_LINEAR);
 
-    ALLEGRO_DISPLAY* disp = al_create_display(640, 480);
+    ALLEGRO_DISPLAY* disp = al_create_display(800, 800);
     must_init(disp, "display");
 
     ALLEGRO_FONT* font = al_create_builtin_font();
