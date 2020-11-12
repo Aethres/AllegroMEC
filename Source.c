@@ -9,15 +9,23 @@
 typedef struct
 {
     double x, y;
-}coordinates;
+}Coordinates;
 
 typedef struct {
 
-    coordinates coordinates;
+    Coordinates coordinates;
     double radius;
-}circle;
+}Circle;
 
-coordinates points[100];
+struct Camera
+{
+    int x, y, speedX, speedY;
+    double scale;
+};
+
+Coordinates points[100];
+
+int pointsSize = 0;
 
 void getPoints() {
 
@@ -41,28 +49,32 @@ void getPoints() {
             if (chooser == 0) {
                 points[i].x = val;
                 chooser = 1;
+                pointsSize++;
             }
             else {
                 points[i].y = val;
                 chooser = 0;
+                i++;
             }
-            i++;
+            
+            
         }
         else {
             ptr++;
         }
     }
 
+
     fclose(file);
 }
 
-double distance(coordinates pointA, coordinates pointB) {
+double distance(Coordinates pointA, Coordinates pointB) {
 
     return sqrt(pow(pointA.x - pointB.x, 2) + pow(pointA.y - pointB.y, 2));
 
 }
 
-int is_valid_circle(circle circle, coordinates points[], int length) {
+int is_valid_circle(Circle circle, Coordinates points[], int length) {
 
     for (int i = 0; i < length; i++) {
 
@@ -74,15 +86,14 @@ int is_valid_circle(circle circle, coordinates points[], int length) {
 
 }
 
+Circle getMEC() {
 
-circle getMEC() {
-
-    int pointsLength = sizeof(points) / sizeof(points[0]);
+    int pointsLength = pointsSize;
     int firstCircle = 1;
 
 
-    circle tmpcircle = { 0, 0, 0 };
-    circle mec = { 0, 0, 0 };
+    Circle tmpcircle = { 0, 0, 0 };
+    Circle mec = { 0, 0, 0 };
 
     for (int i = 0; i < pointsLength; i++) {
         for (int j = 1; j < pointsLength; j++) {
@@ -131,9 +142,12 @@ void must_init(bool test, const char* description){
 
 int main()
 {
-
+    int windowX = 600;
+    int windowY = 600;
+    
+    
     getPoints();
-    getMEC();
+    Circle circle = getMEC();
 
     must_init(al_init(), "allegro");
     must_init(al_install_keyboard(), "keyboard");
@@ -159,6 +173,24 @@ int main()
     al_register_event_source(queue, al_get_display_event_source(disp));
     al_register_event_source(queue, al_get_timer_event_source(timer));
 
+    
+
+    windowX = al_get_display_width(disp);
+    windowY = al_get_display_height(disp);
+
+    printf("\nwindowX: %d windowY: %d\n", windowX, windowY);
+
+    struct Camera camera = { windowX/2, windowY/2 , 0, 0, 10};
+
+    int xLength = windowX/2;
+    int yLength = windowY/2;
+    int xNegativeLength = xLength;
+    int yNegativeLength = yLength;
+    int fifthLine = 0;
+    int littleLineSize = 5;
+
+    char str[10];
+
     bool done = false;
     bool redraw = true;
     ALLEGRO_EVENT event;
@@ -170,6 +202,7 @@ int main()
     {.x = 330, .y = 420, .z = 0, .color = al_map_rgb_f(1, 1, 0) },
     };
 
+
     al_start_timer(timer);
     while(1){
 
@@ -177,29 +210,131 @@ int main()
 
         switch(event.type){
         case ALLEGRO_EVENT_TIMER:
-            // game logic goes here.
+            camera.x += camera.speedX;
+            camera.y += camera.speedY;
+            xLength -= camera.speedX;
+            yLength -= camera.speedY;
+            xNegativeLength += camera.speedX;
+            yNegativeLength += camera.speedY;
+
             redraw = true;
             break;
 
         case ALLEGRO_EVENT_KEY_DOWN:
+            if (event.keyboard.keycode == ALLEGRO_KEY_UP)
+                camera.speedY+= 10;
+            if (event.keyboard.keycode == ALLEGRO_KEY_DOWN)
+                camera.speedY-= 10;
+            if (event.keyboard.keycode == ALLEGRO_KEY_LEFT)
+                camera.speedX+= 10;
+            if (event.keyboard.keycode == ALLEGRO_KEY_RIGHT)
+                camera.speedX-= 10;
+
+
+
+            if (event.keyboard.keycode == ALLEGRO_KEY_ESCAPE)
+                done = true;
+            
+            break;
+                
+        case ALLEGRO_EVENT_KEY_UP:
+            if (event.keyboard.keycode == ALLEGRO_KEY_UP)
+                camera.speedY-= 10;
+            if (event.keyboard.keycode == ALLEGRO_KEY_DOWN)
+                camera.speedY+= 10;
+            if (event.keyboard.keycode == ALLEGRO_KEY_LEFT)
+                camera.speedX-= 10;
+            if (event.keyboard.keycode == ALLEGRO_KEY_RIGHT)
+                camera.speedX+= 10;
+            break;
         case ALLEGRO_EVENT_DISPLAY_CLOSE:
             done = true;
             break;
         }
+
 
         if(done)
             break;
 
         if(redraw && al_is_event_queue_empty(queue)){
 
-            al_clear_to_color(al_map_rgb(0, 0, 0));
-            al_draw_text(font, al_map_rgb(255, 255, 255), 0, 0, 0, "Hello world!");
-            al_draw_filled_triangle(35, 350, 85, 375, 35, 400, al_map_rgb_f(0, 1, 0));
-            al_draw_filled_rectangle(240, 260, 340, 340, al_map_rgba_f(0, 0, 0.5, 0.5));
-            al_draw_circle(450, 370, 30, al_map_rgb_f(1, 0, 1), 2);
-            al_draw_line(440, 110, 460, 210, al_map_rgb_f(1, 0, 0), 1);
-            al_draw_line(500, 220, 570, 200, al_map_rgb_f(1, 1, 0), 1);
-            al_draw_prim(v, NULL, NULL, 0, 4, ALLEGRO_PRIM_TRIANGLE_STRIP);
+            al_clear_to_color(al_map_rgb(200, 200, 200));
+            al_draw_text(font, al_map_rgb(0, 0, 0), 0, 0, 0, "You can move the camera with arrow keys");
+            
+            al_draw_circle(circle.coordinates.x * camera.scale + camera.x, -circle.coordinates.y * camera.scale + camera.y, circle.radius * camera.scale, al_map_rgb_f(1, 0, 1), 2);
+            
+            for (int i = 0; i < pointsSize; i++)
+            {
+                al_draw_filled_circle(points[i].x * camera.scale + camera.x, -points[i].y * camera.scale + camera.y, 0.3 * camera.scale, al_map_rgb_f(0, 0, 128));
+            }
+
+            al_draw_line(0, 0 + camera.y, windowX, 0 + camera.y, al_map_rgb_f(0, 0, 0), 2);
+            al_draw_line(0 + camera.x, 0, 0 + camera.x, windowY, al_map_rgb_f(0, 0, 0), 2);
+
+            fifthLine = 0;
+            for (int i = 1; i < xLength / camera.scale; i++)
+            {   
+                if (fifthLine == 5) {
+                    littleLineSize = 10;
+                    fifthLine = 0;
+                    sprintf(str, "%d", i - 1);
+                    al_draw_text(font, al_map_rgb(255, 0, 0), camera.scale * i + camera.x, littleLineSize * 2 + camera.y, ALLEGRO_ALIGN_CENTRE, str);
+                }
+                else {
+                    littleLineSize = 5;
+                }
+                al_draw_line(camera.scale * i + camera.x, -littleLineSize + camera.y, camera.scale * i + camera.x, littleLineSize + camera.y, al_map_rgb_f(0, 0, 0), 2);
+                fifthLine++;
+            }
+
+            fifthLine = 0;
+            for (int i = 1; i < xNegativeLength / camera.scale; i++)
+            {
+                if (fifthLine == 5) {
+                    littleLineSize = 10;
+                    fifthLine = 0;
+                    sprintf(str, "%d", -(i - 1));
+                    al_draw_text(font, al_map_rgb(255, 0, 0), -(camera.scale * i) + camera.x, littleLineSize * 2 + camera.y, ALLEGRO_ALIGN_CENTRE, str);
+                }
+                else {
+                    littleLineSize = 5;
+                }
+                al_draw_line(-(camera.scale * i) + camera.x, -littleLineSize + camera.y, -(camera.scale * i) + camera.x, littleLineSize + camera.y, al_map_rgb_f(0, 0, 0), 2);
+                fifthLine++;
+            }
+
+            fifthLine = 0;
+            for (int i = 1; i < yLength / camera.scale; i++)
+            {
+                if (fifthLine == 5) {
+                    littleLineSize = 10;
+                    fifthLine = 0;
+                    sprintf(str, "%d", -(i - 1));
+                    al_draw_text(font, al_map_rgb(255, 0, 0), -littleLineSize * 2 + camera.x, camera.scale * i - 3 + camera.y, ALLEGRO_ALIGN_RIGHT, str);
+                }
+                else {
+                    littleLineSize = 5;
+                }
+                al_draw_line(-littleLineSize + camera.x, camera.scale * i + camera.y, littleLineSize + camera.x, camera.scale * i + camera.y,  al_map_rgb_f(0, 0, 0), 2);
+                fifthLine++;
+            }
+
+            fifthLine = 0;
+            for (int i = 1; i < yNegativeLength / camera.scale; i++)
+            {
+                if (fifthLine == 5) {
+                    littleLineSize = 10;
+                    fifthLine = 0;
+                    sprintf(str, "%d", i - 1);
+                    al_draw_text(font, al_map_rgb(255, 0, 0), -littleLineSize * 2 + camera.x, -(camera.scale * i) - 3 + camera.y, ALLEGRO_ALIGN_RIGHT, str);
+                }
+                else {
+                    littleLineSize = 5;
+                }
+                al_draw_line(-littleLineSize + camera.x, -(camera.scale * i) + camera.y, littleLineSize + camera.x, -(camera.scale * i) + camera.y, al_map_rgb_f(0, 0, 0), 2);
+                fifthLine++;
+            }
+            
             al_flip_display();
 
             redraw = false;
