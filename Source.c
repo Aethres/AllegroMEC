@@ -4,7 +4,6 @@
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_primitives.h>
 #include <ctype.h>
-#pragma warning(disable : 4996)
 
 typedef struct
 {
@@ -109,8 +108,6 @@ Circle getMEC() {
         }
     }
 
-
-
     for (int i = 0; i < pointsLength; i++) {
         for (int j = 1; j < pointsLength; j++) {
             for (int k = 0; k < pointsLength; k++) {
@@ -128,7 +125,7 @@ Circle getMEC() {
 
         }
     }
-    printf("%f %f %f", mec.coordinates.x, mec.coordinates.y, mec.radius);
+    printf("MECx: %f MECy: %f MECradius: %f", mec.coordinates.x, mec.coordinates.y, mec.radius);
     return mec;
 
 }
@@ -142,8 +139,7 @@ void must_init(bool test, const char* description){
 
 int main()
 {
-    int windowX = 600;
-    int windowY = 600;
+    
     
     
     getPoints();
@@ -163,7 +159,10 @@ int main()
     al_set_new_display_option(ALLEGRO_SAMPLES, 8, ALLEGRO_SUGGEST);
     al_set_new_bitmap_flags(ALLEGRO_MIN_LINEAR | ALLEGRO_MAG_LINEAR);
 
-    ALLEGRO_DISPLAY* disp = al_create_display(800, 800);
+    int windowX = 800;
+    int windowY = 800;
+
+    ALLEGRO_DISPLAY* disp = al_create_display(windowX, windowY);
     must_init(disp, "display");
 
     ALLEGRO_FONT* font = al_create_builtin_font();
@@ -189,11 +188,12 @@ int main()
     int fifthLine = 0;
     int littleLineSize = 5;
 
-    char str[10];
+    char str[50];
 
     bool done = false;
     bool redraw = true;
     ALLEGRO_EVENT event;
+
 
     ALLEGRO_VERTEX v[] = {
     {.x = 210, .y = 320, .z = 0, .color = al_map_rgb_f(1, 0, 0) },
@@ -256,13 +256,11 @@ int main()
         if(done)
             break;
 
-        if(redraw && al_is_event_queue_empty(queue)){
+        if (redraw && al_is_event_queue_empty(queue)) {
 
             al_clear_to_color(al_map_rgb(200, 200, 200));
-            al_draw_text(font, al_map_rgb(0, 0, 0), 0, 0, 0, "You can move the camera with arrow keys");
-            
-            al_draw_circle(circle.coordinates.x * camera.scale + camera.x, -circle.coordinates.y * camera.scale + camera.y, circle.radius * camera.scale, al_map_rgb_f(1, 0, 1), 2);
-            
+            al_draw_text(font, al_map_rgb(0, 0, 0), 0, 0, ALLEGRO_ALIGN_LEFT, "You can move the camera with arrow keys");
+
             for (int i = 0; i < pointsSize; i++)
             {
                 al_draw_filled_circle(points[i].x * camera.scale + camera.x, -points[i].y * camera.scale + camera.y, 0.3 * camera.scale, al_map_rgb_f(0, 0, 128));
@@ -273,7 +271,7 @@ int main()
 
             fifthLine = 0;
             for (int i = 1; i < xLength / camera.scale; i++)
-            {   
+            {
                 if (fifthLine == 5) {
                     littleLineSize = 10;
                     fifthLine = 0;
@@ -315,7 +313,7 @@ int main()
                 else {
                     littleLineSize = 5;
                 }
-                al_draw_line(-littleLineSize + camera.x, camera.scale * i + camera.y, littleLineSize + camera.x, camera.scale * i + camera.y,  al_map_rgb_f(0, 0, 0), 2);
+                al_draw_line(-littleLineSize + camera.x, camera.scale * i + camera.y, littleLineSize + camera.x, camera.scale * i + camera.y, al_map_rgb_f(0, 0, 0), 2);
                 fifthLine++;
             }
 
@@ -334,6 +332,15 @@ int main()
                 al_draw_line(-littleLineSize + camera.x, -(camera.scale * i) + camera.y, littleLineSize + camera.x, -(camera.scale * i) + camera.y, al_map_rgb_f(0, 0, 0), 2);
                 fifthLine++;
             }
+
+            
+            al_draw_circle(circle.coordinates.x* camera.scale + camera.x, -circle.coordinates.y * camera.scale + camera.y, circle.radius* camera.scale, al_map_rgb(255, 0, 255), 2);
+            al_draw_filled_circle(circle.coordinates.x* camera.scale + camera.x, -circle.coordinates.y * camera.scale + camera.y, 0.3 * camera.scale, al_map_rgb(255, 0, 255));
+            al_draw_line(circle.coordinates.x* camera.scale + camera.x, -circle.coordinates.y * camera.scale + camera.y, points[0].x* camera.scale + camera.x, -points[0].y * camera.scale + camera.y, al_map_rgb(255, 0, 255), 2);
+            sprintf(str, "(%.f,%.f)", circle.coordinates.x, circle.coordinates.y);
+            al_draw_text(font, al_map_rgb(255, 0, 0), circle.coordinates.x* camera.scale + camera.x, -circle.coordinates.y * camera.scale + camera.y + 3, ALLEGRO_ALIGN_LEFT, str);
+            sprintf(str, "(radius:%.1f)", circle.radius);
+            al_draw_text(font, al_map_rgb(255, 0, 0), (points[0].x + circle.coordinates.x) / 2 * camera.scale + camera.x, -(points[0].y + circle.coordinates.y) / 2 * camera.scale + camera.y + 3, ALLEGRO_ALIGN_CENTER, str);
             
             al_flip_display();
 
