@@ -4,6 +4,7 @@
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_primitives.h>
 #include <ctype.h>
+#pragma warning(disable : 4996)
 
 typedef struct
 {
